@@ -44,6 +44,7 @@ import org.apache.axis2.AxisFault;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -183,6 +184,55 @@ public class SendSMSHandler implements SMSHandler {
 		}
 		context.setProperty("ADDRESSES", addresses);
 
+
+		if (!clientclr.isNull("senderAddresses")) {
+
+			// fetch endpoints
+			List<OperatorEndpoint> endpoints = occi.getAPIEndpointsByApp(API_TYPE, executor.getSubResourcePath(),executor.getValidoperators());
+			Map<String, OperatorEndpoint> operatorMap = new HashMap<String, OperatorEndpoint>();
+
+			for (OperatorEndpoint endpoint : endpoints) {
+				operatorMap.put(endpoint.getOperator(), endpoint);
+			}
+
+			JSONArray senderAddressesArray = clientclr.getJSONArray("senderAddresses");
+			for (int index=0; index<senderAddressesArray.length(); index++) {
+				JSONObject senderAddressesObj = senderAddressesArray.getJSONObject(index);
+				String operatorCode = senderAddressesObj.getString("operatorCode");
+
+				// fetch endpoint
+
+				if (operatorMap.containsKey(operatorCode)) {
+
+					OperatorEndpoint endpoint = operatorMap.get(operatorCode);
+
+					String toEndpointAddress = endpoint.getEndpointref().getAddress();
+					log.info("sending endpoint found: " + toEndpointAddress + " Request ID: " + UID.getRequestID(context));
+					//-----URL DECODE
+					if (toEndpointAddress.contains("outbound") && toEndpointAddress.contains("requests") && toEndpointAddress.contains("tel:+")) {
+						toEndpointAddress.replace("tel:+", "tel:+");
+					} else {
+						toEndpointAddress = java.net.URLDecoder.decode(sending_add, "UTF-8");
+					}
+
+					senderAddressesObj.put("toAddress", toEndpointAddress);
+
+					String authorizationHeader = "Bearer " + executor.getAccessToken(endpoint.getOperator(), context);
+
+					senderAddressesObj.put("authorizationHeader", authorizationHeader);
+
+				} else {
+					senderAddressesObj.put("toAddress", "Not Provisioned");
+				}
+			}
+
+			String requestStr = jsonBody.toString();
+
+			// add the new body to message in hub
+			JsonUtil.newJsonPayload(((Axis2MessageContext) context).getAxis2MessageContext(), requestStr, true, true);
+
+		}
+
 //		Map<String, SendSMSResponse> smsResponses = smssendmulti(context, subsrequest,
 //				jsonBody.getJSONObject("outboundSMSMessageRequest").getJSONArray("address"), API_TYPE,
 //				executor.getValidoperators());
@@ -316,7 +366,7 @@ public class SendSMSHandler implements SMSHandler {
 			}else{
 				sending_add = java.net.URLDecoder.decode(sending_add, "UTF-8");
 			}                
-            //-----URL DECODE
+            //-----URL DECODE //todo: endpoint- to get Operator (and token) | sending_add- to sending
 			String responseStr = executor.makeRequest(endpoint, sending_add, jsonStr, true, smsmc,false);
 			sendSMSResponse = parseJsonResponse(responseStr);
 
