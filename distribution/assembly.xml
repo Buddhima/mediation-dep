@@ -67,6 +67,13 @@
 		<fileSet>
 			<directory>.</directory>
 			<includes>
+				<include>nashorn-mediator-${com.wso2telco.dep.version}.jar</include>
+			</includes>
+			<outputDirectory>/others/dropins</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>.</directory>
+			<includes>
 				<include>oneapi-validation-${com.wso2telco.dep.version}.jar</include>
 			</includes>
 			<outputDirectory>/others/lib</outputDirectory>

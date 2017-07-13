@@ -152,7 +152,18 @@
 									<url>${com.wso2telco.repo.url}/dep/oneapi-validation/${com.wso2telco.dep.version}/oneapi-validation-${com.wso2telco.dep.version}.jar</url>
 									<outputDirectory>.</outputDirectory>			            
 								</configuration>
-							</execution>				    
+							</execution>
+							<execution>
+								<id>nashorn-mediator</id>
+								<phase>generate-resources</phase>
+								<goals>
+									<goal>wget</goal>
+								</goals>
+								<configuration>
+									<url>${com.wso2telco.repo.url}/dep/nashorn-mediator/${com.wso2telco.dep.version}/nashorn-mediator-${com.wso2telco.dep.version}.jar</url>
+									<outputDirectory>.</outputDirectory>
+								</configuration>
+							</execution>
 						</executions>
 					</plugin>
 		        </plugins>
